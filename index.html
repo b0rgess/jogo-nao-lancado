@@ -1,0 +1,272 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Cobrinha</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #4b6cb7, #182848);
+            transition: background 1s ease;
+        }
+
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: #292b2c;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #snakeCanvas {
+            border: 1px solid #fff;
+        }
+
+        #startButton {
+            margin-top: 10px;
+            padding: 20px 35px;
+            font-size: 23px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #startButton:hover {
+            background-color: #31b0d5;
+        }
+
+        #score {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #fff;
+        }
+
+        #gameOver {
+            display: none;
+            margin-top: 20px;
+            font-size: 36px;
+            color: #ff0000;
+        }
+
+        #scoreTable {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 400px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+
+        #scoreTable th, #scoreTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #scoreTable th {
+            background-color: #5bc0de;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="snakeCanvas" width="400" height="400"></canvas>
+        <button id="startButton">Start</button>
+        <div id="score">Score: 0</div>
+        <div id="gameOver">Game Over</div>
+    </div>
+    <table id="scoreTable">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aqui serão adicionadas as linhas da tabela dinamicamente -->
+        </tbody>
+    </table>
+
+    <script>
+        const canvas = document.getElementById("snakeCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const gridSize = 20;
+        const snake = [{ x: 10, y: 10 }];
+        const food = { x: 15, y: 15 };
+        let direction = "right";
+        let gameRunning = false;
+        let score = 0;
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Desenhar a cobrinha
+            ctx.fillStyle = "#00ff00"; 
+            snake.forEach(segment => {
+                ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+            });
+
+            // Desenhar a comida
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+
+            // Exibir a pontuação
+            document.getElementById("score").textContent = "Score: " + score;
+        }
+
+        function move() {
+            const head = { ...snake[0] };
+
+            switch (direction) {
+                case "up":
+                    head.y--;
+                    break;
+                case "down":
+                    head.y++;
+                    break;
+                case "left":
+                    head.x--;
+                    break;
+                case "right":
+                    head.x++;
+                    break;
+            }
+
+            snake.unshift(head);
+
+            // Verificar se a cobra comeu a comida
+            if (head.x === food.x && head.y === food.y) {
+                generateFood();
+                score += 10;
+            } else {
+                snake.pop();
+            }
+        }
+
+        function generateFood() {
+            food.x = Math.floor(Math.random() * (canvas.width / gridSize));
+            food.y = Math.floor(Math.random() * (canvas.height / gridSize));
+        }
+
+        function checkCollision() {
+            const head = snake[0];
+
+            // Colisão com as paredes
+            if (head.x < 0 || head.y < 0 || head.x >= canvas.width / gridSize || head.y >= canvas.height / gridSize) {
+                showGameOver();
+                updateScoreTable();
+                resetGame();
+            }
+
+            // Colisão com a própria cobra
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    showGameOver();
+                    updateScoreTable();
+                    resetGame();
+                }
+            }
+        }
+
+        function resetGame() {
+            snake.length = 1;
+            snake[0] = { x: 10, y: 10 };
+            direction = "right";
+            generateFood();
+            gameRunning = false;
+            score = 0;
+        }
+
+        function showGameOver() {
+            document.getElementById("gameOver").style.display = "block";
+        }
+
+        function updateScoreTable() {
+            // Atualizar a tabela de pontuações
+            const scoreTable = document.getElementById("scoreTable");
+            const tbody = scoreTable.querySelector("tbody");
+            const newRow = document.createElement("tr");
+            const rankCell = document.createElement("td");
+            const playerCell = document.createElement("td");
+            const scoreCell = document.createElement("td");
+
+            rankCell.textContent = tbody.children.length + 1;
+            playerCell.textContent = "Player"; // Você pode modificar isso para obter o nome do jogador
+            scoreCell.textContent = score;
+
+            newRow.appendChild(rankCell);
+            newRow.appendChild(playerCell);
+            newRow.appendChild(scoreCell);
+            tbody.appendChild(newRow);
+        }
+
+        function hideGameOver() {
+            document.getElementById("gameOver").style.display = "none";
+        }
+
+        function gameLoop() {
+            if (gameRunning) {
+                draw();
+                move();
+                checkCollision();
+                setTimeout(gameLoop, 200);
+            }
+        }
+
+        document.getElementById("startButton").addEventListener("click", () => {
+            if (!gameRunning) {
+                hideGameOver();
+                gameRunning = true;
+                score = 0;
+                generateFood();
+                gameLoop();
+            }
+        });
+
+        document.addEventListener("keydown", (event) => {
+            switch (event.key) {
+                case "ArrowUp":
+                    if (direction !== "down") {
+                        direction = "up";
+                    }
+                    break;
+                case "ArrowDown":
+                    if (direction !== "up") {
+                        direction = "down";
+                    }
+                    break;
+                case "ArrowLeft":
+                    if (direction !== "right") {
+                        direction = "left";
+                    }
+                    break;
+                case "ArrowRight":
+                    if (direction !== "left") {
+                        direction = "right";
+                    }
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
+
